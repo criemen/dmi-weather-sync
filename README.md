@@ -24,8 +24,8 @@ WINDGURU_STATION_PASSWORD=your_station_password
 
 Get credentials:
 - DMI API key: [dmi.dk/friedata](https://www.dmi.dk/friedata/)
-- Windguru station: [windguru.cz/station](https://www.windguru.cz/station)
-- Station IDs: [DMI Station API](https://dmigw.govcloud.dk/v2/metObs/collections/station/items)
+- Windguru station: [https://stations.windguru.cz/](https://stations.windguru.cz/)
+- Station IDs:[DMI](https://opendatadocs.dmi.govcloud.dk/Data/Meteorological_Observation_Data_Stations)
 
 ## Weather Data
 
