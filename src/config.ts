@@ -11,9 +11,6 @@ interface Config {
     stationUid: string;
     stationPassword: string;
   };
-  polling: {
-    intervalMs: number;
-  };
 }
 
 function getEnvVar(key: string): string {
@@ -32,11 +29,5 @@ export const config: Config = {
   windguru: {
     stationUid: getEnvVar('WINDGURU_STATION_UID'),
     stationPassword: getEnvVar('WINDGURU_STATION_PASSWORD'),
-  },
-  polling: {
-    // Default to 5 minutes, configurable via env var (in seconds)
-    intervalMs: process.env.POLLING_INTERVAL_SECONDS
-      ? parseInt(process.env.POLLING_INTERVAL_SECONDS, 10) * 1000
-      : 5 * 60 * 1000,
   },
 };

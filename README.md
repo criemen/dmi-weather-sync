@@ -20,7 +20,6 @@ DMI_API_KEY=your_dmi_api_key
 DMI_STATION_ID=your_station_id
 WINDGURU_STATION_UID=your_station_uid
 WINDGURU_STATION_PASSWORD=your_station_password
-POLLING_INTERVAL_SECONDS=300  # Optional, default 300 (5 minutes)
 ```
 
 Get credentials:
