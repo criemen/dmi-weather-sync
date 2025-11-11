@@ -61,4 +61,4 @@ docker run -d --name dmi-sync --env-file .env dmi-weather-sync
 
 ## License
 
-ISC
+MIT

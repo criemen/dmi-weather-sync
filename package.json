@@ -22,7 +22,7 @@
     "sync"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
