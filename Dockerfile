@@ -1,27 +1,33 @@
-FROM ubuntu:24.04
+# Build stage
+FROM node:20-slim AS builder
 
-# Install Node.js 20.x
-RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including devDependencies for building)
+RUN npm ci
 
 # Copy application files
 COPY . .
 
 # Build TypeScript
 RUN npm run build
+
+# Runtime stage
+FROM node:20-slim
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Copy compiled JavaScript from builder
+COPY --from=builder /app/dist ./dist
 
 # Run the application
 CMD ["node", "dist/index.js"]
