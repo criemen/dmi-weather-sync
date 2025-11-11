@@ -58,7 +58,6 @@ docker run -d --name dmi-sync --env-file .env dmi-weather-sync
 3. Converts units (m/s → knots)
 4. Authenticates with Windguru (MD5 hash)
 5. Uploads data via HTTP GET
-6. Repeats at configured interval
 
 ## License
 

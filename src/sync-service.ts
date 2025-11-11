@@ -32,32 +32,10 @@ export class SyncService {
     console.log('Performing initial sync...');
     void this.syncWeatherData();
 
-    // Calculate delay until next minute past the hour (e.g., :01, :06, :11, etc.)
-    const now = new Date();
-    const currentMinute = now.getMinutes();
-    const currentSecond = now.getSeconds();
-    const currentMillisecond = now.getMilliseconds();
-
-    // Find next target minute (1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56)
-    const targetMinutes = [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56];
-    let nextTargetMinute = targetMinutes.find((m) => m > currentMinute);
-
-    if (nextTargetMinute === undefined) {
-      // If we're past minute 56, next target is minute 1 of next hour
-      nextTargetMinute = targetMinutes[0]!;
-    }
-
-    // Calculate milliseconds until next target minute
-    let minutesUntilNext = nextTargetMinute - currentMinute;
-    if (minutesUntilNext <= 0) {
-      minutesUntilNext += 60; // Next hour
-    }
-
-    const delayMs =
-      minutesUntilNext * 60 * 1000 - currentSecond * 1000 - currentMillisecond;
+    const { delayMs, targetTime } = this.calculateDelayUntilNextSync();
 
     console.log(
-      `Next sync in ${Math.round(delayMs / 1000)}s at ${now.getHours()}:${String(nextTargetMinute).padStart(2, '0')}`
+      `Next sync in ${Math.round(delayMs / 1000)}s at ${targetTime.getHours()}:${String(targetTime.getMinutes()).padStart(2, '0')}`
     );
 
     // Schedule first sync at the target time
@@ -72,6 +50,41 @@ export class SyncService {
         5 * 60 * 1000
       ); // 5 minutes
     }, delayMs);
+  }
+
+  /**
+   * Calculate the delay in milliseconds until the next scheduled sync
+   * Syncs occur at minutes 1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56
+   */
+  private calculateDelayUntilNextSync(): {
+    delayMs: number;
+    targetTime: Date;
+  } {
+    const now = new Date();
+    const currentMinute = now.getMinutes();
+    const currentSecond = now.getSeconds();
+    const currentMillisecond = now.getMilliseconds();
+
+    // Find next target minute (1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56)
+    const targetMinutes = [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56];
+    let nextTargetMinute = targetMinutes.find((m) => m > currentMinute);
+
+    let minutesUntilNext: number;
+    if (nextTargetMinute === undefined) {
+      // If we're past minute 56, next target is minute 1 of next hour
+      nextTargetMinute = targetMinutes[0]!;
+      minutesUntilNext = 60 - currentMinute + nextTargetMinute;
+    } else {
+      minutesUntilNext = nextTargetMinute - currentMinute;
+    }
+
+    const delayMs =
+      minutesUntilNext * 60 * 1000 - currentSecond * 1000 - currentMillisecond;
+
+    // Calculate the actual target time
+    const targetTime = new Date(now.getTime() + delayMs);
+
+    return { delayMs, targetTime };
   }
 
   /**
