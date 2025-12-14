@@ -16,16 +16,14 @@ npm start
 Required environment variables in `.env`:
 
 ```env
-DMI_API_KEY=your_dmi_api_key
 DMI_STATION_ID=your_station_id
 WINDGURU_STATION_UID=your_station_uid
 WINDGURU_STATION_PASSWORD=your_station_password
 ```
 
 Get credentials:
-- DMI API key: [dmi.dk/friedata](https://www.dmi.dk/friedata/)
 - Windguru station: [https://stations.windguru.cz/](https://stations.windguru.cz/)
-- Station IDs:[DMI](https://opendatadocs.dmi.govcloud.dk/Data/Meteorological_Observation_Data_Stations)
+- DMI Station IDs: [DMI Open Data Docs](https://opendatadocs.dmi.govcloud.dk/Data/Meteorological_Observation_Data_Stations)
 
 ## Weather Data
 
@@ -56,8 +54,7 @@ docker run -d --name dmi-sync --env-file .env dmi-weather-sync
 1. Polls DMI API for latest 10-minute observations
 2. Transforms GeoJSON response to internal format
 3. Converts units (m/s → knots)
-4. Authenticates with Windguru (MD5 hash)
-5. Uploads data via HTTP GET
+4. Uploads to Windguru (MD5 authenticated HTTP GET)
 
 ## License
 

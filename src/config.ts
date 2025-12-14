@@ -4,7 +4,6 @@ dotenv.config();
 
 interface Config {
   dmi: {
-    apiKey: string;
     stationId: string;
   };
   windguru: {
@@ -23,7 +22,6 @@ function getEnvVar(key: string): string {
 
 export const config: Config = {
   dmi: {
-    apiKey: getEnvVar('DMI_API_KEY'),
     stationId: getEnvVar('DMI_STATION_ID'),
   },
   windguru: {

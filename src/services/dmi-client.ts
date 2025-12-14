@@ -5,12 +5,10 @@ import type { DmiWeatherData } from '../types.js';
  * Client for fetching weather data from DMI API
  */
 export class DmiClient {
-  private readonly apiKey: string;
   private readonly stationId: string;
-  private readonly baseUrl = 'https://dmigw.govcloud.dk/v2';
+  private readonly baseUrl = 'https://opendataapi.dmi.dk/v2';
 
   constructor() {
-    this.apiKey = config.dmi.apiKey;
     this.stationId = config.dmi.stationId;
   }
 
@@ -23,11 +21,7 @@ export class DmiClient {
 
       const url = `${this.baseUrl}/metObs/collections/observation/items?stationId=${this.stationId}&period=latest-10-minutes&limit=50&sortorder=observed,DESC`;
 
-      const response = await fetch(url, {
-        headers: {
-          'X-Gravitee-Api-Key': this.apiKey,
-        },
-      });
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(
