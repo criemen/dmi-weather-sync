@@ -29,5 +29,8 @@ RUN npm ci --only=production
 # Copy compiled JavaScript from builder
 COPY --from=builder /app/dist ./dist
 
+# Copy stations configuration
+COPY stations.toml ./
+
 # Run the application
 CMD ["node", "dist/index.js"]
