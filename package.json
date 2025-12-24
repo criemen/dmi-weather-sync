@@ -36,6 +36,7 @@
     "vitest": "^4.0.8"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "smol-toml": "^1.6.0"
   }
 }

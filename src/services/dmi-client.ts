@@ -1,4 +1,3 @@
-import { config } from '../config.js';
 import type { DmiWeatherData } from '../types.js';
 
 /**
@@ -6,10 +5,12 @@ import type { DmiWeatherData } from '../types.js';
  */
 export class DmiClient {
   private readonly stationId: string;
+  private readonly stationName: string;
   private readonly baseUrl = 'https://opendataapi.dmi.dk/v2';
 
-  constructor() {
-    this.stationId = config.dmi.stationId;
+  constructor(stationId: string, stationName: string) {
+    this.stationId = stationId;
+    this.stationName = stationName;
   }
 
   /**
@@ -17,7 +18,7 @@ export class DmiClient {
    */
   async fetchWeatherData(): Promise<DmiWeatherData> {
     try {
-      console.log('Fetching weather data from DMI...');
+      console.log(`[${this.stationName}] Fetching weather data from DMI...`);
 
       const url = `${this.baseUrl}/metObs/collections/observation/items?stationId=${this.stationId}&period=latest-10-minutes&limit=50&sortorder=observed,DESC`;
 
@@ -32,7 +33,10 @@ export class DmiClient {
       const data = await response.json();
       return this.transformDmiResponse(data);
     } catch (error) {
-      console.error('Error fetching DMI weather data:', error);
+      console.error(
+        `[${this.stationName}] Error fetching DMI weather data:`,
+        error
+      );
       throw error;
     }
   }
@@ -49,6 +53,11 @@ export class DmiClient {
     const { features } = data;
 
     if (!features || features.length === 0) {
+      // log data for debugging
+      console.error(
+        `[${this.stationName}] DMI API response has no features:`,
+        JSON.stringify(data, null, 2)
+      );
       throw new Error('No weather data available from DMI');
     }
 

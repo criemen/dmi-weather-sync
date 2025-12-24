@@ -1,5 +1,4 @@
 import { createHash } from 'crypto';
-import { config } from '../config.js';
 import type { DmiWeatherData, WindguruPayload } from '../types.js';
 
 /**
@@ -9,11 +8,17 @@ import type { DmiWeatherData, WindguruPayload } from '../types.js';
 export class WindguruClient {
   private readonly stationUid: string;
   private readonly stationPassword: string;
+  private readonly stationName: string;
   private readonly baseUrl = 'http://www.windguru.cz/upload/api.php';
 
-  constructor() {
-    this.stationUid = config.windguru.stationUid;
-    this.stationPassword = config.windguru.stationPassword;
+  constructor(
+    stationUid: string,
+    stationPassword: string,
+    stationName: string
+  ) {
+    this.stationUid = stationUid;
+    this.stationPassword = stationPassword;
+    this.stationName = stationName;
   }
 
   /**
@@ -24,8 +29,11 @@ export class WindguruClient {
       const payload = this.createPayload(data);
       const url = this.buildUrl(payload);
 
-      console.log('Pushing weather data to Windguru...');
-      console.log('Request URL:', url.replace(/hash=[^&]+/, 'hash=***')); // Hide hash in logs
+      console.log(`[${this.stationName}] Pushing weather data to Windguru...`);
+      console.log(
+        `[${this.stationName}] Request URL:`,
+        url.replace(/hash=[^&]+/, 'hash=***')
+      ); // Hide hash in logs
 
       const response = await fetch(url, {
         method: 'GET',
@@ -39,13 +47,18 @@ export class WindguruClient {
       }
 
       const responseText = await response.text();
-      console.log('Windguru API response:', responseText);
+      console.log(`[${this.stationName}] Windguru API response:`, responseText);
       if (!responseText.includes('OK')) {
         throw new Error(`Windguru API returned error: ${responseText}`);
       }
-      console.log('Weather data successfully pushed to Windguru');
+      console.log(
+        `[${this.stationName}] Weather data successfully pushed to Windguru`
+      );
     } catch (error) {
-      console.error('Error pushing data to Windguru:', error);
+      console.error(
+        `[${this.stationName}] Error pushing data to Windguru:`,
+        error
+      );
       throw error;
     }
   }

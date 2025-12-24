@@ -1,34 +1,109 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { DmiClient } from '../src/services/dmi-client.js';
 
 describe('DmiClient', () => {
-  it('should fetch latest observations from DMI API', async () => {
-    // This test requires valid DMI_API_KEY and DMI_STATION_ID in .env
-    const client = new DmiClient();
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    console.log('Fetching latest observations from DMI API...');
+  it('accepts stationId as constructor parameter', () => {
+    const client = new DmiClient('custom_station_123', 'Test Station');
+
+    // Should not throw - stationId is passed directly
+    expect(client).toBeDefined();
+  });
+
+  it('constructs URL with provided stationId', async () => {
+    const client = new DmiClient('custom_station_456', 'Test Station');
+
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          features: [
+            {
+              properties: {
+                parameterId: 'wind_speed',
+                value: 5.0,
+                observed: '2024-01-01T10:00:00Z',
+              },
+            },
+          ],
+        }),
+        { status: 200 }
+      )
+    );
+
+    await client.fetchWeatherData();
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('stationId=custom_station_456')
+    );
+  });
+
+  it('fetches and transforms DMI response correctly', async () => {
+    const client = new DmiClient('06180', 'Copenhagen Airport');
+
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          features: [
+            {
+              properties: {
+                parameterId: 'wind_speed',
+                value: 5.5,
+                observed: '2024-01-01T10:00:00Z',
+              },
+            },
+            {
+              properties: {
+                parameterId: 'wind_dir',
+                value: 180,
+                observed: '2024-01-01T10:00:00Z',
+              },
+            },
+            {
+              properties: {
+                parameterId: 'temp_dry',
+                value: 12.3,
+                observed: '2024-01-01T10:00:00Z',
+              },
+            },
+          ],
+        }),
+        { status: 200 }
+      )
+    );
+
     const data = await client.fetchWeatherData();
 
-    console.log('\n=== DMI Weather Data ===');
-    console.log(JSON.stringify(data, null, 2));
-    console.log('========================\n');
-
-    // Verify the response structure
-    expect(data).toBeDefined();
+    expect(data.windSpeed).toBe(5.5);
+    expect(data.windDirection).toBe(180);
+    expect(data.temperature).toBe(12.3);
     expect(data.timestamp).toBeInstanceOf(Date);
+  });
 
-    // Log individual fields for clarity
-    console.log('Parsed fields:');
-    console.log(`  Temperature: ${data.temperature ?? 'N/A'}°C`);
-    console.log(`  Wind Speed: ${data.windSpeed ?? 'N/A'} m/s`);
-    console.log(`  Wind Direction: ${data.windDirection ?? 'N/A'}°`);
-    console.log(`  Wind Gust: ${data.windGust ?? 'N/A'} m/s`);
-    console.log(`  Wind Min: ${data.windMin ?? 'N/A'} m/s`);
-    console.log(`  Humidity: ${data.humidity ?? 'N/A'}%`);
-    console.log(`  Pressure: ${data.pressure ?? 'N/A'} hPa`);
-    console.log(`  Timestamp: ${data.timestamp.toISOString()}`);
+  it('throws error when DMI API returns error status', async () => {
+    const client = new DmiClient('06180', 'Copenhagen Airport');
 
-    // At least timestamp should always be present
-    expect(data.timestamp).toBeDefined();
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response('Internal Server Error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      })
+    );
+
+    await expect(client.fetchWeatherData()).rejects.toThrow(/DMI API error/);
+  });
+
+  it('throws error when no weather data available', async () => {
+    const client = new DmiClient('06180', 'Copenhagen Airport');
+
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ features: [] }), { status: 200 })
+    );
+
+    await expect(client.fetchWeatherData()).rejects.toThrow(
+      /No weather data available/
+    );
   });
 });
