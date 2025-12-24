@@ -1,0 +1,39 @@
+# DMI Weather Sync - Station Configuration
+#
+# Each section defines a weather station to sync.
+# The section name (in quotes) becomes the station name used in logs
+# and for password environment variable lookup.
+#
+# Password environment variables use the format:
+#   WINDGURU_PASSWORD_{STATION_NAME}
+# Where {STATION_NAME} is uppercase with spaces/special chars as underscores.
+# Example: "Copenhagen Airport" -> WINDGURU_PASSWORD_COPENHAGEN_AIRPORT
+
+["Copenhagen Airport"]
+dmi_station_id = "06180"
+windguru_uid = "66348854-4ed4-43dc-9448-fc06a7ec5deb"
+
+["Nakkehoved Fyr"]
+dmi_station_id = "06168"
+windguru_uid = "263333e6-8424-49ff-bccb-78ff72a420d5"
+
+["Drogden Fyr"]
+dmi_station_id = "06183"
+windguru_uid = "ae479be3-1b18-4350-8507-0c6d43b31007"
+
+["Elvira Madigan Airport"]
+dmi_station_id = "06124"
+windguru_uid = "c5f84461-31c1-4a4a-8f67-f73481a6a414"
+
+["Rosnas Fyr"]
+dmi_station_id = "06159"
+windguru_uid = "81c6b3d7-190b-4ba9-9d86-c309e307bc3b"
+
+["Blavandshuk Fyr"]
+dmi_station_id = "06081"
+windguru_uid = "3c32c017-27e4-4891-aa11-947b5b450f5d"
+
+# Find DMI station IDs at:
+# https://opendatadocs.dmi.govcloud.dk/en/Guides/Station_Lists_Explained
+#
+# Get your Windguru station UID from your Windguru station settings
