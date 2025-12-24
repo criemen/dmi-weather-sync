@@ -1,19 +1,38 @@
 import { DmiClient } from './services/dmi-client.js';
 import { WindguruClient } from './services/windguru-client.js';
+import { getStationPassword } from './config.js';
+import type { StationsConfig } from './types.js';
+
+/**
+ * Context for a single station containing clients and state
+ */
+interface StationSyncContext {
+  name: string;
+  dmiClient: DmiClient;
+  windguruClient: WindguruClient;
+  lastSyncedTimestamp?: Date;
+}
 
 /**
  * Service that continuously syncs weather data from DMI to Windguru
+ * Supports multiple stations with parallel fetching and fault isolation
  */
 export class SyncService {
-  private readonly dmiClient: DmiClient;
-  private readonly windguruClient: WindguruClient;
+  private readonly stations: StationSyncContext[];
   private intervalId?: NodeJS.Timeout;
   private isRunning = false;
-  private lastSyncedTimestamp?: Date;
 
-  constructor() {
-    this.dmiClient = new DmiClient();
-    this.windguruClient = new WindguruClient();
+  constructor(stationsConfig: StationsConfig) {
+    this.stations = Object.entries(stationsConfig).map(([name, config]) => ({
+      name,
+      dmiClient: new DmiClient(config.dmiStationId, name),
+      windguruClient: new WindguruClient(
+        config.windguruUid,
+        getStationPassword(name),
+        name
+      ),
+      lastSyncedTimestamp: undefined,
+    }));
   }
 
   /**
@@ -25,12 +44,15 @@ export class SyncService {
       return;
     }
 
-    console.log('Starting sync service...');
+    console.log(
+      `Starting sync service for ${this.stations.length} station(s)...`
+    );
+    this.stations.forEach((s) => console.log(`  - ${s.name}`));
     this.isRunning = true;
 
     // Perform initial sync immediately
     console.log('Performing initial sync...');
-    void this.syncWeatherData();
+    void this.syncOnce();
 
     const { delayMs, targetTime } = this.calculateDelayUntilNextSync();
 
@@ -40,12 +62,12 @@ export class SyncService {
 
     // Schedule first sync at the target time
     setTimeout(() => {
-      void this.syncWeatherData();
+      void this.syncOnce();
 
       // Then schedule periodic syncs every 5 minutes
       this.intervalId = setInterval(
         () => {
-          void this.syncWeatherData();
+          void this.syncOnce();
         },
         5 * 60 * 1000
       ); // 5 minutes
@@ -106,61 +128,59 @@ export class SyncService {
   }
 
   /**
-   * Perform a single sync operation
+   * Perform a single sync operation for all stations
    */
-  private async syncWeatherData(): Promise<void> {
+  async syncOnce(): Promise<void> {
     const timestamp = new Date().toISOString();
+    console.log(
+      `[${timestamp}] Starting sync for ${this.stations.length} station(s)...`
+    );
 
-    try {
-      console.log(`[${timestamp}] Starting weather data sync...`);
+    // Fetch from all DMI stations in parallel
+    const fetchResults = await Promise.allSettled(
+      this.stations.map(async (station) => {
+        try {
+          const data = await station.dmiClient.fetchWeatherData();
+          return { station, data };
+        } catch (error) {
+          console.error(
+            `[${timestamp}] Failed to fetch data for ${station.name}:`,
+            error
+          );
+          throw error;
+        }
+      })
+    );
 
-      // Fetch data from DMI
-      let weatherData;
-      try {
-        weatherData = await this.dmiClient.fetchWeatherData();
-        console.log('Weather data fetched:', weatherData);
-      } catch (dmiError) {
-        console.error(
-          `[${timestamp}] Failed to fetch data from DMI, skipping this iteration:`,
-          dmiError
-        );
-        return;
+    // Push to Windguru for successful fetches
+    for (const result of fetchResults) {
+      if (result.status === 'rejected') {
+        continue; // Already logged error
       }
 
-      // Check if this data is newer than the last synced data
+      const { station, data } = result.value;
+
+      // Check if data is newer
       if (
-        this.lastSyncedTimestamp &&
-        weatherData.timestamp <= this.lastSyncedTimestamp
+        station.lastSyncedTimestamp &&
+        data.timestamp <= station.lastSyncedTimestamp
       ) {
         console.log(
-          `[${timestamp}] No new data available (last synced: ${this.lastSyncedTimestamp.toISOString()}), skipping Windguru push`
+          `[${timestamp}] No new data for ${station.name}, skipping push`
         );
-        return;
+        continue;
       }
 
-      // Push to Windguru
       try {
-        await this.windguruClient.pushWeatherData(weatherData);
-      } catch (windguruError) {
+        await station.windguruClient.pushWeatherData(data);
+        station.lastSyncedTimestamp = data.timestamp;
+        console.log(`[${timestamp}] Successfully synced ${station.name}`);
+      } catch (error) {
         console.error(
-          `[${timestamp}] Failed to push data to Windguru:`,
-          windguruError
+          `[${timestamp}] Failed to push data for ${station.name}:`,
+          error
         );
-        return;
       }
-
-      // Update last synced timestamp only after successful push
-      this.lastSyncedTimestamp = weatherData.timestamp;
-
-      console.log(
-        `[${timestamp}] Weather data sync completed successfully (timestamp: ${weatherData.timestamp.toISOString()})`
-      );
-    } catch (error) {
-      console.error(
-        `[${timestamp}] Unexpected error during weather data sync:`,
-        error
-      );
-      // Continue running despite errors
     }
   }
 }

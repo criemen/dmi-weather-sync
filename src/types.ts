@@ -1,4 +1,17 @@
 /**
+ * Configuration for a single weather station
+ */
+export interface StationConfig {
+  dmiStationId: string;
+  windguruUid: string;
+}
+
+/**
+ * Map of station names to their configurations
+ */
+export type StationsConfig = Record<string, StationConfig>;
+
+/**
  * Weather data from DMI API
  */
 export interface DmiWeatherData {
