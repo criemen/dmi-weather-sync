@@ -36,3 +36,4 @@ yarn-error.log*
 # AI tools
 .claude/
 .nori-config.json
+.worktrees/

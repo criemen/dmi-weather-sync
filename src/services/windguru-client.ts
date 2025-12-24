@@ -40,6 +40,9 @@ export class WindguruClient {
 
       const responseText = await response.text();
       console.log('Windguru API response:', responseText);
+      if (!responseText.includes('OK')) {
+        throw new Error(`Windguru API returned error: ${responseText}`);
+      }
       console.log('Weather data successfully pushed to Windguru');
     } catch (error) {
       console.error('Error pushing data to Windguru:', error);
